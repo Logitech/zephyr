@@ -125,4 +125,22 @@ enum dfu_state {
 
 void wait_for_usb_dfu(k_timeout_t delay);
 
+/**
+ * Prototype for the DFU state callback function.
+ * The funcion receives one parameter: the
+ * current DFU state.
+ */
+typedef void (*dfu_state_callback)(enum dfu_state);
+
+/**
+ * Set the DFU state callback function, or NULL. This replaces
+ * any earlier callback functions, if any.
+ *
+ * Whenever the state changes or may have changed, call cb with the new
+ * state. This can be useful for tracking DFU operations as they take place.
+ *
+ * @param cb the callback function, or NULL for none.
+ */
+void dfu_set_state_callback(dfu_state_callback cb);
+
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_ */

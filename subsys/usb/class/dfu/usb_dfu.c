@@ -302,6 +302,7 @@ struct dfu_data_t {
 	enum dfu_status status;            /* Status of the DFU device */
 	uint16_t block_nr;                 /* DFU block number */
 	uint16_t bwPollTimeout;
+	dfu_state_callback state_cb;       /* Callback for state changes */
 };
 
 #if FLASH_AREA_LABEL_EXISTS(image_1)
@@ -317,7 +318,18 @@ static struct dfu_data_t dfu_data = {
 	.flash_area_id = UPLOAD_FLASH_AREA_ID,
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
+	.state_cb = NULL
 };
+
+
+static void
+handle_state_cb(void)
+{
+	if (dfu_data.state_cb)
+	{
+		dfu_data.state_cb(dfu_data.state);
+	}
+}
 
 /**
  * @brief Helper function to check if in DFU app state.
@@ -600,6 +612,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		return -EINVAL;
 	}
 
+	handle_state_cb();
+
 	return 0;
 }
 
@@ -662,6 +676,8 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		LOG_DBG("USB unknown state");
 		break;
 	}
+
+	handle_state_cb();
 }
 
 /**
@@ -783,6 +799,8 @@ static void dfu_work_handler(struct k_work *item)
 		LOG_ERR("OUT of state machine");
 		break;
 	}
+
+
 }
 
 static int usb_dfu_init(const struct device *dev)
@@ -818,6 +836,11 @@ static bool is_dfu_started(void)
 	}
 
 	return false;
+}
+
+void dfu_set_state_callback(dfu_state_callback cb)
+{
+	dfu_data.state_cb = cb;
 }
 
 /**
